@@ -14,16 +14,14 @@ NSString *CfxrSoundPBoardType = @"CfxrSoundPBoardType";
 
 @implementation CfxrDocument
 
-- (NSString *)windowNibName 
-{
+- (NSString *)windowNibName  {
     return @"CfxrDocument";
 }
 
-- (void)windowControllerDidLoadNib:(NSWindowController *)windowController 
-{
-  [super windowControllerDidLoadNib:windowController];
+- (void)windowControllerDidLoadNib:(NSWindowController *)windowController  {
+    [super windowControllerDidLoadNib:windowController];
 	
-	if([Sound countInContext:[self managedObjectContext]] == 0)
+	if ([Sound countInContext:[self managedObjectContext]] == 0)
 		[self generateSoundFromCategory:@"Empty"];
 	
 	// Sort by inverse index by default
@@ -36,21 +34,18 @@ NSString *CfxrSoundPBoardType = @"CfxrSoundPBoardType";
 	soundsTable.delegate = self;
 }
 
--(void)dealloc;
-{
+- (void)dealloc; {
 	[Playback playback].playingSound = nil;
 	if([Playback playback].delegate == self)
 		[Playback playback].delegate = nil;
 	[super dealloc];
 }
 
--(IBAction)generateSound:(id)sender;
-{
+- (IBAction)generateSound:(id)sender; {
 	[self generateSoundFromCategory:[[sender selectedCell] title]];
 }
 
--(Sound*)generateSoundFromCategory:(NSString*)category;
-{
+- (Sound*)generateSoundFromCategory:(NSString*)category; {
 	Sound *sound = [NSEntityDescription insertNewObjectForEntityForName:@"Sound"
 												 inManagedObjectContext:[self managedObjectContext]];
 	[sound generateParamsFromCategory:category];
@@ -63,33 +58,33 @@ NSString *CfxrSoundPBoardType = @"CfxrSoundPBoardType";
 	return sound;
 }
 
--(IBAction)play:(id)sender;
-{
+- (IBAction)play:(id)sender; {
 	if([soundsController selectedObjects].count == 0) return;
 	
 	Sound *s = [[soundsController selectedObjects] objectAtIndex:0];
 	[[Playback playback] play:s];
 }
--(IBAction)playOnChange:(id)sender;
-{
+
+- (IBAction)playOnChange:(id)sender; {
 	if([[NSUserDefaults standardUserDefaults] boolForKey:@"playOnChange"])
 		[self play:sender];
 }
--(IBAction)toggleLooping:(id)sender;
-{
-	if([sender state] == NSOnState) {
+
+- (IBAction)toggleLooping:(id)sender; {
+	if ([sender state] == NSOnState) {
 		[Playback playback].delegate = self;
 		[self play:nil];
-	} else 
+	}
+    else {
 		[Playback playback].delegate = nil;
+    }
 }
--(void)playbackStoppedPlaying:(Playback*)playback_;
-{
+
+- (void)playbackStoppedPlaying:(Playback*)playback_; {
 	[self play:nil];
 }
 
--(IBAction)export:(id)sender;
-{
+- (IBAction)export:(id)sender; {
 	if([soundsController selectedObjects].count == 0) return;
 	
 	Sound *s = [[soundsController selectedObjects] objectAtIndex:0];
@@ -98,24 +93,33 @@ NSString *CfxrSoundPBoardType = @"CfxrSoundPBoardType";
 	savePanel.title = @"Export WAV as";
 	savePanel.prompt = @"Export WAV";
 	savePanel.nameFieldLabel = @"Export as:";
-	savePanel.requiredFileType = @"wav";
+	savePanel.allowedFileTypes = [NSArray arrayWithObject:@"wav"];
 	savePanel.canSelectHiddenExtension = YES;
-	
-	NSString *filename = [NSString stringWithFormat:@"%@ %03d %@.wav",
-						  [self displayName], s.index.intValue,  s.name];
-	
-	[savePanel beginSheetForDirectory:nil
-								 file:filename
-					   modalForWindow:[[[self windowControllers] objectAtIndex:0] window]
-						modalDelegate:self
-					   didEndSelector:@selector(savePanelDidEnd:returnCode:contextInfo:)
-					      contextInfo:s];
-	
+    savePanel.nameFieldStringValue = [NSString stringWithFormat:@"%@ %03d %@.wav",
+                                     [self displayName], s.index.intValue,  s.name];
+
+    if ([savePanel runModal] == NSModalResponseOK) {
+        id oldDelegate = [Playback playback].delegate;
+        [Playback playback].delegate = nil;
+        
+        NSError *error;
+        if(![[Playback playback] export:s to:savePanel.URL.path error:&error]) {
+            NSAlert *alert = [[NSAlert alloc] init];
+            [alert setMessageText:[error localizedDescription]];
+            [alert addButtonWithTitle:@"Bummer"];
+            [alert runModal];
+        }
+        [Playback playback].delegate = oldDelegate;
+    }
 }
--(IBAction)exportQuickly:(id)sender;
-{
-	if([self fileURL] == nil) {
-		NSRunAlertPanel(@"You need to save first.", @"When you quick export, you export to the same folder as this document. Thus, you must save this document to somewhere on your computer before you can quick export.", @"Okay then", nil, nil);
+
+- (IBAction)exportQuickly:(id)sender; {
+	if ([self fileURL] == nil) {
+        NSAlert *alert = [[NSAlert alloc] init];
+        [alert setMessageText:@"You need to save first."];
+        [alert setInformativeText:@"When you quick export, you export to the same folder as this document. Thus, you must save this document to somewhere on your computer before you can quick export."];
+        [alert addButtonWithTitle:@"Okay then"];
+        [alert runModal];
 		return;
 	}
 	
@@ -127,8 +131,7 @@ NSString *CfxrSoundPBoardType = @"CfxrSoundPBoardType";
 						  [self displayName], s.index.intValue,  sName];
 	
 	NSString *path = [[[[self fileURL] path] stringByDeletingLastPathComponent] stringByAppendingPathComponent:filename];
-	NSLog(@"I'm now exporting %@ to %@", s, path);
-	
+//    NSLog(@"I'm now exporting %@ to %@", s, path);
 
 	id oldDelegate = [Playback playback].delegate;
 	[Playback playback].delegate = nil;
@@ -138,36 +141,17 @@ NSString *CfxrSoundPBoardType = @"CfxrSoundPBoardType";
 		[self presentError:error];
 	
 	[Playback playback].delegate = oldDelegate;
-
-
 }
 
-- (void)savePanelDidEnd:(NSSavePanel *)sheet returnCode:(int)returnCode  contextInfo:(void  *)contextInfo;
-{
-	if(returnCode == NSCancelButton) return;
-	
-	id oldDelegate = [Playback playback].delegate;
-	[Playback playback].delegate = nil;
-	
-	NSError *error;
-	if(![[Playback playback] export:contextInfo to:sheet.filename error:&error])
-		NSRunAlertPanel(@"Export failed.", [error localizedDescription], @"Bummer", nil, nil);
-	[Playback playback].delegate = oldDelegate;
-}
-
--(IBAction)takeMasterVolumeFrom:(id)sender;
-{
+- (IBAction)takeMasterVolumeFrom:(id)sender; {
 	[Playback playback].masterVolume = [sender floatValue]/100;
 }
 
-- (void)tableViewSelectionDidChange:(NSNotification *)aNotification
-{
+- (void)tableViewSelectionDidChange:(NSNotification *)aNotification {
 	[self play:nil];
 }
 
-
-- (IBAction) copy:(id) sender
-{
+- (IBAction) copy:(id) sender {
 	NSArray *selectedObjects = [soundsController selectedObjects];
 	NSUInteger count = [selectedObjects count];
 	if (count == 0) return;
@@ -175,8 +159,7 @@ NSString *CfxrSoundPBoardType = @"CfxrSoundPBoardType";
 	NSMutableArray *copyObjectsArray = [NSMutableArray arrayWithCapacity:count];
 	NSMutableArray *copyStringsArray = [NSMutableArray arrayWithCapacity:count];
 	
-	for (Sound *sound in selectedObjects)
-	{
+	for (Sound *sound in selectedObjects) {
 		[copyObjectsArray addObject:[sound dictionaryRepresentation]];
 		[copyStringsArray addObject:[sound description]];
 	}
@@ -187,14 +170,11 @@ NSString *CfxrSoundPBoardType = @"CfxrSoundPBoardType";
 	[generalPasteboard setData:copyData forType:CfxrSoundPBoardType];
 	[generalPasteboard setString:[copyStringsArray componentsJoinedByString:@"\n"] forType:NSStringPboardType];
 }
-- (IBAction) paste:(id) sender
-{
+
+- (IBAction) paste:(id) sender {
 	NSPasteboard *generalPasteboard = [NSPasteboard generalPasteboard];
 	NSData *data = [generalPasteboard dataForType:CfxrSoundPBoardType];
-	if (data == nil)
-	{
-		return;
-	}
+    if (data == nil) return;
 	NSArray *soundsArray = [NSKeyedUnarchiver unarchiveObjectWithData:data];
 	NSManagedObjectContext *moc = [self managedObjectContext];
 
@@ -203,10 +183,7 @@ NSString *CfxrSoundPBoardType = @"CfxrSoundPBoardType";
 		Sound *sound = (id)[NSEntityDescription insertNewObjectForEntityForName:@"Sound" inManagedObjectContext:moc];
 		// Dump the values from the dictionary into the new entity
 		[sound setValuesForKeysWithDictionary:soundDictionary];
-		
 	}
 }
-
-
 
 @end

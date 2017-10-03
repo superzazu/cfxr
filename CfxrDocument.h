@@ -15,18 +15,18 @@
 	IBOutlet NSTableView *soundsTable;
 }
 
--(IBAction)generateSound:(id)sender;
+- (IBAction)generateSound:(id)sender;
 
--(Sound*)generateSoundFromCategory:(NSString*)category;
+- (Sound*)generateSoundFromCategory:(NSString*)category;
 
--(IBAction)play:(id)sender;
--(IBAction)playOnChange:(id)sender;
--(IBAction)toggleLooping:(id)sender;
+- (IBAction)play:(id)sender;
+- (IBAction)playOnChange:(id)sender;
+- (IBAction)toggleLooping:(id)sender;
 
--(IBAction)export:(id)sender;
--(IBAction)exportQuickly:(id)sender;
+- (IBAction)export:(id)sender;
+- (IBAction)exportQuickly:(id)sender;
 
--(IBAction)takeMasterVolumeFrom:(id)sender;
+- (IBAction)takeMasterVolumeFrom:(id)sender;
 
 - (IBAction) copy:(id) sender;
 - (IBAction) paste:(id) sender;

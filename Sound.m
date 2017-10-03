@@ -22,7 +22,7 @@
 	{
 		return 0;
 	}
-	return [array count];
+	return (int) [array count];
 }
 
 +(int)highestIndexInContext:(NSManagedObjectContext*)moc;

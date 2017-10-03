@@ -12,8 +12,6 @@
 @protocol PlaybackDelegate;
 
 @interface Playback : NSObject {
-	
-		
 	bool filter_on;
 
 	bool playing_sample;
@@ -54,7 +52,6 @@
 	
 	float* vselected;
 	
-	
 	int file_sampleswritten;
 	float filesample;
 	int fileacc;
@@ -67,10 +64,10 @@
 	
 	id<NSObject, PlaybackDelegate> delegate;
 }
-+(Playback*)playback;
++ (Playback*)playback;
 
--(void)play:(Sound*)sound;
--(BOOL)export:(Sound*)sound to:(NSString*)path error:(NSError**)error;
+- (void)play:(Sound*)sound;
+- (BOOL)export:(Sound*)sound to:(NSString*)path error:(NSError**)error;
 
 @property (retain) Sound *playingSound;
 @property (assign) id<NSObject, PlaybackDelegate> delegate;
@@ -78,10 +75,6 @@
 @property (assign) float masterVolume;
 @end
 
-
-
 @protocol PlaybackDelegate
--(void)playbackStoppedPlaying:(Playback*)playback_;
+- (void)playbackStoppedPlaying:(Playback*)playback_;
 @end
-
-

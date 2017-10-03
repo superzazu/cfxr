@@ -8,7 +8,6 @@
  */
 #import "common.h"
 
-float frnd(float range)
-{
-	return (float)rnd(10000)/10000*range;
+float frnd(float range) {
+	return (float) rnd(10000) / 10000 * range;
 }
